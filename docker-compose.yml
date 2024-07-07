@@ -1,0 +1,42 @@
+version: '3.9'
+services:
+  webapi:
+    image: golang:1.21.12-alpine3.20
+    volumes:
+      - ".:/app"
+    working_dir: /app
+    command: sh -c "sleep 5 && go run cmd/main.go"
+    ports:
+      - "3000:3000"
+    environment:
+      - APP_PORT=3000
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=password
+      - DB_NAME=syn_store
+      - JWT_SECRET=rahasia
+    depends_on:
+      - db
+      - migrate
+
+  db:
+    image: postgres:latest
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=syn_store
+
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      - db
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://postgres:password@db:5432/syn_store?sslmode=disable",
+      "up"
+    ]
